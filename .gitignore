@@ -1,0 +1,15 @@
+# created by virtualenv automatically
+# Python debris
+__pycache__/
+*.py[cod]
+
+# Virtual Environment
+venv/
+env/
+
+# IDE settings (optional but recommended)
+.vscode/
+.idea/
+
+# Project Output (Keep your repo clean of local data)
+output/
