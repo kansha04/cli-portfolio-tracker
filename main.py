@@ -3,6 +3,7 @@ import os
 import csv
 import pandas as pd
 import matplotlib.pyplot as plt
+import requests
 
 def ensure_output_dir():
     if not os.path.exists('output'):
@@ -37,6 +38,22 @@ class Stock:
 
     def get_value(self):
         return self.get_price() * self.quantity
+
+    def get_daily_change_percent(self):
+        data = self.get_data()
+        # We need at least two days of data to compare today vs yesterday
+        if data is None or len(data) < 2:
+            return None
+        try:
+            yesterday_close = data['Close'].iloc[-2]
+            today_close = data['Close'].iloc[-1]
+
+            # Calculate percentage change
+            change_percent = ((today_close - yesterday_close) / yesterday_close) * 100
+            return change_percent
+        except Exception as e:
+            print(f"Error calculating daily change for {self.symbol}: {e}")
+            return None
 
     def plot_history(self):
         data = self.get_data()
@@ -88,17 +105,26 @@ class Portfolio:
 
     def __str__(self):
         result = "Portfolio Holdings:\n"
-        result += f"{'Ticker':<10} {'Price':<10} {'Qty':<10} {'Value':<10}\n"
-        result += "-" * 40 + "\n"
+        # Added 'Change %' to the header
+        result += f"{'Ticker':<10} {'Price':<10} {'Change %':<10} {'Qty':<10} {'Value':<10}\n"
+        result += "-" * 52 + "\n"
 
         for ticker, stock in self.stocks.items():
             price = stock.get_price()
             qty = stock.quantity
+            change = stock.get_daily_change_percent()
 
             if price is not None and qty is not None:
                 value = price * qty
-                # F-strings allow padding: :<10 means "align left, 10 spaces wide"
-                result += f"{ticker:<10} ${price:<9.2f} {qty:<9} ${value:.2f}\n"
+
+                # Format the change string (e.g., +1.25% or -0.50%)
+                if change is not None:
+                    # The '+' forces a plus sign for positive numbers
+                    change_str = f"{change:>+7.2f}%"
+                else:
+                    change_str = "N/A"
+
+                result += f"{ticker:<10} ${price:<9.2f} {change_str:<10} {qty:<10} ${value:.2f}\n"
             else:
                 result += f"{ticker}: Error (Price: {price}, Qty: {qty})\n"
         return result
